@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JST (BPS-14) Full Mock Test</title>
+    <style>
+        :root { --primary: #2c3e50; --secondary: #3498db; --success: #27ae60; --bg: #f4f7f6; }
+        body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg); color: #333; margin: 0; padding: 20px; }
+        .quiz-container { max-width: 850px; margin: auto; background: #fff; padding: 40px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h1 { text-align: center; color: var(--primary); font-size: 1.5rem; margin-bottom: 30px; border-bottom: 2px solid var(--secondary); padding-bottom: 10px; }
+        .question-block { display: none; }
+        .question-block.active { display: block; }
+        .q-text { font-size: 1.1rem; font-weight: 600; margin-bottom: 20px; color: var(--primary); }
+        .options { list-style: none; padding: 0; }
+        .options li { background: #fff; border: 2px solid #eee; border-radius: 8px; padding: 12px 15px; margin-bottom: 10px; cursor: pointer; transition: all 0.2s; }
+        .options li:hover { border-color: var(--secondary); background: #f0f8ff; }
+        .options li.selected { border-color: var(--secondary); background: var(--secondary); color: white; }
+        .controls { display: flex; justify-content: space-between; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; }
+        button { padding: 12px 25px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 1rem; transition: opacity 0.3s; }
+        .btn-prev { background: #95a5a6; color: white; }
+        .btn-next { background: var(--secondary); color: white; }
+        .btn-submit { background: var(--success); color: white; display: none; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        #result-screen { text-align: center; display: none; }
+        .score-circle { width: 150px; height: 150px; border-radius: 50%; border: 8px solid var(--success); display: flex; align-items: center; justify-content: center; margin: 20px auto; font-size: 2rem; font-weight: bold; color: var(--success); }
+        .progress-bar { font-size: 0.9rem; color: #7f8c8d; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="quiz-container">
+    <h1>Junior Science Teacher (BPS-14) Test</h1>
+    <div id="quiz-box">
+        <div class="progress-bar" id="progress">Question 1 of 100</div>
+        <div id="questions-container"></div>
+    </div>
+
+    <div class="controls" id="nav-controls">
+        <button class="btn-prev" id="prevBtn" onclick="move(-1)" disabled>Previous</button>
+        <button class="btn-next" id="nextBtn" onclick="move(1)">Next</button>
+        <button class="btn-submit" id="submitBtn" onclick="calcScore()">Submit Test</button>
+    </div>
+
+    <div id="result-screen">
+        <h2>Test Completed!</h2>
+        <p>Your Final Score:</p>
+        <div class="score-circle" id="final-score">0/100</div>
+        <button style="background: var(--primary); color: white;" onclick="location.reload()">Restart Test</button>
+    </div>
+</div>
+
+<script>
+const quizData = [
+    // ENGLISH
+    { q: "Theme of 1st paragraph (Dr. Martin Luther King speech):", a: "c", options: { a: "Segregation", b: "Discrimination", c: "Deprivation of basic rights", d: "Harmony" } },
+    { q: "Theme of 2nd paragraph:", a: "b", options: { a: "Character & hope", b: "Freedom, equality & peace", c: "Slavery", d: "Struggle" } },
+    { q: "If there had been a violence call, there would have been:", a: "a", options: { a: "Chaos & less support", b: "Credibility", c: "Dominancy", d: "Harmony" } },
+    { q: "The last sentence of the passage is about:", a: "a", options: { a: "Human rights globally", b: "US rights", c: "Black citizens", d: "Local rights" } },
+    { q: "Meaning of 'vociferous':", a: "a", options: { a: "Vehement", b: "Deep", c: "Silent", d: "High" } },
+    { q: "Identify adjective: 'What book are you reading in the library?'", a: "a", options: { a: "What", b: "Reading", c: "In", d: "Library" } },
+    { q: "Correct punctuation:", a: "d", options: { a: "quote starts low", b: "no quotes", c: "low case start", d: "He said to me, 'He listens...'" } },
+    { q: "Future Perfect Continuous: 'You have been working...'", a: "c", options: { a: "will be", b: "have been", c: "will have been working", d: "will has" } },
+    { q: "Change Voice: 'He was driving a car...'", a: "a", options: { a: "A car was being driven", b: "car was driving", c: "car was driven by me", d: "car is driven" } },
+    { q: "Change Narration: Kashif said to me, 'Will you come with us tomorrow?'", a: "d", options: { a: "told I would", b: "told go", c: "inquired", d: "asked me if I would go... following day" } },
+    
+    // GENERAL KNOWLEDGE
+    { q: "Earth's surface covered with water:", a: "c", options: { a: "29%", b: "50%", c: "71%", d: "85%" } },
+    { q: "Major Kharif crop in Pakistan:", a: "d", options: { a: "Wheat", b: "Gram", c: "Mustard", d: "Rice" } },
+    { q: "Indus Waters Treaty signed in:", a: "b", options: { a: "1958", b: "1960", c: "1962", d: "1965" } },
+    { q: "Z.A. Bhutto nationalization policy year:", a: "c", options: { a: "1975", b: "1974", c: "1972", d: "1977" } },
+    { q: "Surplus cotton sold to other nations is:", a: "c", options: { a: "Import", b: "Domestic", c: "Export", d: "Barter" } },
+    { q: "Hot, dry area < 250mm rain on Western side:", a: "c", options: { a: "Equatorial", b: "Monsoon", c: "Hot Desert", d: "Tundra" } },
+    { q: "Institution for 5-year economic plans in Pakistan:", a: "c", options: { a: "State Bank", b: "FBR", c: "Planning Commission", d: "National Economic Council" } },
+    { q: "Primary consequence of Liaquat-Nehru Pact (1950):", a: "c", options: { a: "Kashmir resolution", b: "Financial assets", c: "Protect rights of minorities", d: "Boundary commission" } },
+    { q: "Common motive of Columbus & Da Gama:", a: "c", options: { a: "Religion", b: "Settlement", c: "New sea routes for wealth/Asia", d: "Scientific research" } },
+    { q: "Shift from Ayub era to Bhutto era was:", a: "c", options: { a: "Heavy to cottage", b: "National to Privatization", c: "Private growth to Nationalization", d: "Agrarian to Service" } },
+
+    // PEDAGOGY
+    { q: "Learner who prefers hands-on lab work:", a: "b", options: { a: "Visual", b: "Kinesthetic", c: "Aural", d: "Read/Write" } },
+    { q: "Method allowing free ideas/no criticism:", a: "b", options: { a: "Case Study", b: "Brainstorming", c: "Story Telling", d: "Team Teaching" } },
+    { q: "Telling a tale in history class is:", a: "b", options: { a: "Brainstorming", b: "Story Telling", c: "Case Study", d: "Discussion" } },
+    { q: "Adaptation for visual student who forgets spoken words:", a: "c", options: { a: "Text notes", b: "Physical act", c: "Color-coded visual aids", d: "Oral presentation" } },
+    { q: "Vygotsky's Zone of Proximal Development:", a: "b", options: { a: "Independent skills", b: "Skills with guidance", c: "Reflexes", d: "Beyond capacity" } },
+    { q: "Child shorter than peers but growth rate normal:", a: "a", options: { a: "Normal variation", b: "Malnourished", c: "Delayed", d: "Needs medical help" } },
+    { q: "Bloom's Taxonomy is primarily used to:", a: "b", options: { a: "Group students", b: "Define learning objectives", c: "Prepare rules", d: "Select aids" } },
+    { q: "Correct sequence for lesson planning:", a: "b", options: { a: "Act-SLO-Ass", b: "SLOs-Activities-Assessment", c: "Ass-Act-SLO", d: "Act-Ass-SLO" } },
+    { q: "Use of praise, nods, and encouragement:", a: "a", options: { a: "Reinforcement", b: "Probing", c: "Closure", d: "Introduction" } },
+    { q: "Follow-up questions to deepen response:", a: "b", options: { a: "Stimulus variation", b: "Probing skill", c: "Demonstration", d: "Non-verbal" } },
+    { q: "Quick quiz at end of lesson:", a: "c", options: { a: "Summative", b: "Diagnostic", c: "Formative", d: "Standardized" } },
+    { q: "Which is NOT a good source of feedback?", a: "d", options: { a: "Teacher", b: "Peer", c: "Self", d: "Vague comments" } },
+    { q: "Why was 'Reading' added to STREAM?", a: "b", options: { a: "Acronym length", b: "Creativity, reading, thinking", c: "Reduce English", d: "Literacy only" } },
+    { q: "STEAM project: Science + Arts + Technology discipline mix:", a: "a", options: { a: "Science+Arts+Tech", b: "Math+History", c: "Eng+Geo", d: "Arts+PE" } },
+    { q: "Flipped Learning is a:", a: "c", options: { a: "Behavior theory", b: "Inst. Design", c: "Approach inverting conventional learning", d: "Cognition theory" } },
+    { q: "Blended Learning is:", a: "b", options: { a: "M-Learning", b: "Online + traditional face-to-face", c: "Classroom-based only", d: "Traditional method" } },
+    { q: "Effective feedback EXCEPT:", a: "d", options: { a: "Understand goals", b: "Quality info", c: "Self-assessment", d: "Always use one mode" } },
+    { q: "Classroom management misconceptions EXCEPT:", a: "a", options: { a: "Classrooms are not homogeneous", b: "Quiet = best managed", c: "Goal is only peace", d: "Relies on threats" } },
+    { q: "80% class missed same question. Teacher concludes:", a: "b", options: { a: "No study", b: "Poor wording/instruction", c: "Too difficult", d: "Low-achieving" } },
+    { q: "Teacher standing near whispering students is using:", a: "d", options: { a: "Consequence", b: "Neg. reinforcement", c: "Ignoring", d: "Proximity" } },
+
+    // BIOLOGY
+    { q: "Alteration in cell division checkpoints causes:", a: "b", options: { a: "Hypertension", b: "Cancer", c: "Diabetes", d: "Cataract" } },
+    { q: "Fungus on decaying fruit is:", a: "b", options: { a: "Parasite", b: "Saprophyte", c: "Symbiont", d: "Autotroph" } },
+    { q: "Throat infection cured by antibiotics is:", a: "c", options: { a: "Fungi", b: "Virus", c: "Bacteria", d: "Protozoa" } },
+    { q: "Loosely attached non-protein part of enzyme:", a: "a", options: { a: "Co-factor", b: "Active Site", c: "Prosthetic group", d: "Inhibitor" } },
+    { q: "Organelle for protein assembly (dysfunctional if unassembled):", a: "c", options: { a: "Mitochondria", b: "Golgi", c: "Ribosome", d: "Endoplasmic Reticulum" } },
+    { q: "Process on inner membrane of mitochondria:", a: "b", options: { a: "Glycolysis", b: "Electron transport chain", c: "Pyruvate prod.", d: "Decarboxylation" } },
+    { q: "Bird species diverging for food sources:", a: "c", options: { a: "Gradual", b: "Convergent", c: "Adaptive evolution", d: "Parallel" } },
+    { q: "Insecticide in grassland directly affects:", a: "b", options: { a: "Producers", b: "Primary Consumers", c: "Secondary", d: "Tertiary" } },
+    { q: "Algae are plant-like protists because:", a: "c", options: { a: "Flagella", b: "Decaying feed", c: "Photosynthesis", d: "Chitin wall" } },
+    { q: "Exercise increasing heart rate/oxygen coordination:", a: "c", options: { a: "Dig/Exc", b: "Skel/Dig", c: "Resp/Circulatory", d: "Endo/Exc" } },
+    { q: "Homologous structures support evolution via:", a: "c", options: { a: "Vestigial", b: "Similar function", c: "Common ancestry", d: "Convergent" } },
+    { q: "Removing algae decreases fish population because:", a: "b", options: { a: "Algae harm fish", b: "Algae provide O2/food", c: "Water quality", d: "Algae consume fish" } },
+
+    // CHEMISTRY
+    { q: "X-rays produced when cathode rays strike:", a: "b", options: { a: "Non-Metal", b: "Metal", c: "Material", d: "Gas" } },
+    { q: "Change from packed to scattered particles:", a: "a", options: { a: "Boiling", b: "Condensation", c: "Evaporation", d: "Sublimation" } },
+    { q: "Mass of MgO from 21g of MgCO3 (Mr=84):", a: "c", options: { a: "1.9g", b: "4.0g", c: "10.0g", d: "40.0g" } },
+    { q: "Soap-making industrial process:", a: "b", options: { a: "Plantation", b: "Saponification", c: "Deposition", d: "Distillation" } },
+    { q: "In Redox, electrons transferred from:", a: "b", options: { a: "Oxidizing agent", b: "Reducing agent", c: "Catalyst", d: "Inert Gas" } },
+    { q: "Gas produced with both acid and alkali mixture:", a: "a", options: { a: "Ammonium + Carbonate", b: "Ammonium + Oxide", c: "Hydrogen + Carbonate", d: "Hydrogen + Oxide" } },
+    { q: "Which change is Endothermic?", a: "b", options: { a: "H+Cl -> HCl", b: "H2O -> 2H + O2", c: "Liquid to Solid", d: "2H2+O2 -> Water" } },
+    { q: "Does NOT increase rate by collision nature:", a: "a", options: { a: "Adding catalyst", b: "Pressure", c: "Surface area", d: "Temperature" } },
+    { q: "Combination suitable for Titration salt prep:", a: "d", options: { a: "Ins-Ins", b: "Ins-Sol", c: "Sol-Ins", d: "Soluble Acid + Soluble Base" } },
+    { q: "Does NOT describe reaction at equilibrium:", a: "c", options: { a: "Forward=Backward", b: "Closed system", c: "Kc increases", d: "Conc. constant" } },
+    { q: "NOT a property of weak acid:", a: "b", options: { a: "Salt with NaOH", b: "pH 8-9", c: "Partly dissociated", d: "Reacts with carbonate" } },
+    { q: "Bonding in Potassium Chloride & Methane:", a: "c", options: { a: "Ionic/Ionic", b: "Cov/Ion", c: "Ionic/Covalent", d: "Cov/Cov" } },
+
+    // PHYSICS
+    { q: "Rate of change of velocity:", a: "c", options: { a: "Displace", b: "Speed", c: "Acceleration", d: "Momentum" } },
+    { q: "Boyle's Law (Constant T):", a: "b", options: { a: "P prop V", b: "PV = constant", c: "P prop T", d: "V prop T" } },
+    { q: "Velocity of sound maximum in:", a: "c", options: { a: "Air", b: "Water", c: "Steel", d: "Vacuum" } },
+    { q: "Momentum of 0.5kg at 4m/s:", a: "c", options: { a: "1.0 Ns", b: "1.5 Ns", c: "2.0 Ns", d: "2.5 Ns" } },
+    { q: "Speed of sound in air (room temp):", a: "c", options: { a: "200 m/s", b: "300 m/s", c: "340 m/s", d: "400 m/s" } },
+    { q: "Two 4uF capacitors in series:", a: "a", options: { a: "2 uF", b: "10 uF", c: "24 uF", d: "1 uF" } },
+    { q: "Binary addition (1+1):", a: "d", options: { a: "11", b: "01", c: "00", d: "10" } },
+    { q: "Most atom mass concentrated in:", a: "c", options: { a: "Electrons", b: "Protons", c: "Nucleus", d: "Orbitals" } },
+    { q: "Energy due to motion:", a: "b", options: { a: "Potential", b: "Kinetic", c: "Thermal", d: "Work" } },
+    { q: "Scale coincidence temp (F and C):", a: "d", options: { a: "0", b: "100", c: "40", d: "-40" } },
+    { q: "Bohr Model: electrons revolve in:", a: "b", options: { a: "Elliptical", b: "Stationary circular orbits", c: "Random", d: "Spiral" } },
+    { q: "Telescope uses:", a: "a", options: { a: "Two convex lenses", b: "Two concave", c: "Convex+Concave", d: "Prism+Lens" } },
+
+    // MATH
+    { q: "Smallest number divisible by all given numbers:", a: "d", options: { a: "Factor", b: "Multiple", c: "HCF", d: "LCM" } },
+    { q: "Pizza 10 slices, eat 4. % NOT eaten:", a: "d", options: { a: "20%", b: "30%", c: "40%", d: "60%" } },
+    { q: "20% of price is 120. Total price:", a: "a", options: { a: "600", b: "720", c: "1200", d: "480" } },
+    { q: "Ratio Red:Blue = 3:2. If Red=21, Blue=:", a: "b", options: { a: "7", b: "14", c: "21", d: "28" } },
+    { q: "Sugar 100% more than wheat. Ratio:", a: "b", options: { a: "1:2", b: "2:1", c: "1:3", d: "3:1" } },
+    { q: "Sum Saeed+Son = 60. Saeed double Son. Saeed's age:", a: "b", options: { a: "30", b: "40", c: "45", d: "33.33" } },
+    { q: "Midpoint A(-5,6) B(3,-4):", a: "b", options: { a: "(1,-1)", b: "(-1,1)", c: "(-2,2)", d: "(2,-2)" } },
+    { q: "Distance around 2D closed shape:", a: "b", options: { a: "Diameter", b: "Perimeter", c: "Area", d: "Surface" } },
+    { q: "Interest = Principal x Rate x Time:", a: "a", options: { a: "Simple", b: "Compound", c: "Continuous", d: "Discrete" } },
+    { q: "Sentence with unknowns:", a: "c", options: { a: "True", b: "False", c: "Open", d: "Closed" } },
+    { q: "Events with equal chances:", a: "c", options: { a: "Simple", b: "Disjoint", c: "Equally likely", d: "Equal" } },
+    { q: "6 people avg 50k, 4 people avg 75k. Total income comparison:", a: "c", options: { a: "1st > 2nd", b: "2nd > 1st", c: "Same", d: "1st is half" } },
+
+    // COMPUTER
+    { q: "NOT a web design tool:", a: "d", options: { a: "WordPress", b: "Figma", c: "Wix", d: "Oracle" } },
+    { q: "OSI model layers:", a: "b", options: { a: "5", b: "7", c: "4", d: "6" } },
+    { q: "Data type for person's address:", a: "b", options: { a: "Integer", b: "String", c: "Character", d: "Float" } },
+    { q: "Branch of Artificial Intelligence:", a: "b", options: { a: "Programming", b: "Machine learning", c: "Deep thinking", d: "Micro" } },
+    { q: "NOT a function of OS:", a: "d", options: { a: "Booting", b: "Memory", c: "I/O", d: "Text editing" } },
+    { q: "Software for spreadsheets:", a: "d", options: { a: "PowerPoint", b: "Word", c: "Access", d: "Excel" } },
+    { q: "Machine Language line of code:", a: "d", options: { a: "print", b: "cout", c: "Move", d: "10101110111101111" } },
+    { q: "User interface more user-friendly:", a: "c", options: { a: "MS DOS", b: "Apple DOS", c: "GUI", d: "Linux Terminal" } },
+    { q: "To uniquely identify record in table:", a: "c", options: { a: "Foreign", b: "Composite", c: "Primary key", d: "Table" } },
+    { q: "First generation computing device:", a: "b", options: { a: "IBM 7094", b: "ENIAC", c: "IBM 1401", d: "Intel Pentium" } },
+    { q: "Classification based on size:", a: "c", options: { a: "Analog/Dig", b: "Purpose", c: "Mainframe/Super/Micro", d: "Core i3" } },
+    { q: "Five main components of communication system:", a: "a", options: { a: "Msg, Sender, Receiver, Medium, Protocol", b: "Network/Wire", c: "Signal", d: "Computer" } }
+];
+
+let currentQ = 0;
+let answers = {};
+
+function init() {
+    const container = document.getElementById('questions-container');
+    quizData.forEach((item, idx) => {
+        const div = document.createElement('div');
+        div.className = `question-block ${idx === 0 ? 'active' : ''}`;
+        div.innerHTML = `<div class="q-text">${idx+1}. ${item.q}</div>
+            <ul class="options">
+                ${Object.entries(item.options).map(([key, val]) => 
+                    `<li onclick="pick(${idx}, '${key}', this)">${key}) ${val}</li>`
+                ).join('')}
+            </ul>`;
+        container.appendChild(div);
+    });
+}
+
+function pick(qIdx, choice, el) {
+    answers[qIdx] = choice;
+    const parent = el.parentElement;
+    Array.from(parent.children).forEach(li => li.classList.remove('selected'));
+    el.classList.add('selected');
+}
+
+function move(dir) {
+    const questions = document.querySelectorAll('.question-block');
+    questions[currentQ].classList.remove('active');
+    currentQ += dir;
+    questions[currentQ].classList.add('active');
+    
+    document.getElementById('prevBtn').disabled = currentQ === 0;
+    document.getElementById('nextBtn').style.display = currentQ === quizData.length - 1 ? 'none' : 'block';
+    document.getElementById('submitBtn').style.display = currentQ === quizData.length - 1 ? 'block' : 'none';
+    document.getElementById('progress').innerText = `Question ${currentQ + 1} of 100`;
+}
+
+function calcScore() {
+    let score = 0;
+    quizData.forEach((item, idx) => {
+        if(answers[idx] === item.a) score++;
+    });
+    document.getElementById('quiz-box').style.display = 'none';
+    document.getElementById('nav-controls').style.display = 'none';
+    document.getElementById('result-screen').style.display = 'block';
+    document.getElementById('final-score').innerText = `${score}/100`;
+}
+
+init();
+</script>
+</body>
+</html>
